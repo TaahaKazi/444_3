@@ -58,8 +58,8 @@ else:
     net = resnet50(pretrained=pretrained).to(device)
 
 learning_rate = 0.001
-num_epochs = 50
-batch_size = 24
+num_epochs = 150
+batch_size = 48
 
 # Yolo loss component coefficients (as given in Yolo v1 paper)
 lambda_coord = 5
@@ -93,7 +93,8 @@ data = train_dataset[0]
 """## Set up training tools"""
 
 criterion = YoloLoss(S, B, lambda_coord, lambda_noobj)
-optimizer = torch.optim.SGD(net.parameters(), lr=learning_rate, momentum=0.9, weight_decay=5e-4)
+#optimizer = torch.optim.SGD(net.parameters(), lr=learning_rate, momentum=0.9, weight_decay=5e-4)
+optimizer = torch.optim.Adam(net.parameters(), lr=0.001)
 
 """## Train detector"""
 
@@ -105,6 +106,9 @@ for epoch in range(num_epochs):
     # Update learning rate late in training
     if epoch == 30 or epoch == 40:
         learning_rate /= 10.0
+    else:
+        if epoch > 50 and epoch % 10 == 0:
+            learning_rate /= 8.0
 
     for param_group in optimizer.param_groups:
         param_group['lr'] = learning_rate
@@ -152,7 +156,7 @@ for epoch in range(num_epochs):
         print('Updating best test loss: %.5f' % best_test_loss)
         torch.save(net.state_dict(),'checkpoints/best_detector.pth')
     
-    if (epoch+1) in [5, 10, 20, 30, 40]:
+    if (epoch+1) in [5, 10, 20, 30, 40, 50, 70, 100, 120, 140]:
         torch.save(net.state_dict(),'checkpoints/detector_epoch_%d.pth' % (epoch+1))
 
     torch.save(net.state_dict(),'checkpoints/detector.pth')
